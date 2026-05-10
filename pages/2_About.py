@@ -2,22 +2,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import streamlit as st
 
 st.title("About this project")
-
-architecture_image = Path(__file__).resolve().parent.parent / "assets" / "vrp-solver-architecture.png"
-
-if architecture_image.exists():
-    st.image(
-        str(architecture_image),
-        caption="VRP solver architecture",
-        use_column_width=True,
-    )
-else:
-    st.warning("Architecture image not found in assets/.")
 
 st.markdown(
     """
