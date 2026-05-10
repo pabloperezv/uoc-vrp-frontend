@@ -1,13 +1,14 @@
 """Folium-based interactive map renderer.
 
 We chose Folium + ``streamlit-folium`` over PyDeck for light HTML maps and
-simple popups. With ``osrm_base_url``, solution polylines follow the driving
-network via OSRM ``/route``; otherwise straight segments between stops are used.
+simple popups. When the API returns ``polyline`` per route, that geometry is
+used first; otherwise, with ``osrm_base_url``, OSRM ``/route`` is called from
+the Streamlit host; otherwise straight segments between stops are used.
 """
 
 from __future__ import annotations
 
-from typing import Iterable
+from typing import Any, Iterable
 
 import folium
 from folium.plugins import Fullscreen, MeasureControl
@@ -15,6 +16,25 @@ from folium.plugins import Fullscreen, MeasureControl
 from services.osrm_route_geometry import fetch_driving_polyline
 
 from utils.formatting import format_meters, format_seconds, vehicle_color
+
+
+def _line_coords_from_api_polyline(route: dict[str, Any]) -> list[tuple[float, float]] | None:
+    """Parse backend ``VehicleRoute.polyline`` into Folium ``(lat, lon)`` points."""
+    raw = route.get("polyline")
+    if not raw or not isinstance(raw, list) or len(raw) < 2:
+        return None
+    out: list[tuple[float, float]] = []
+    for p in raw:
+        if isinstance(p, dict):
+            lat, lon = p.get("latitude"), p.get("longitude")
+        elif isinstance(p, (list, tuple)) and len(p) >= 2:
+            lat, lon = p[0], p[1]
+        else:
+            return None
+        if lat is None or lon is None:
+            return None
+        out.append((float(lat), float(lon)))
+    return out if len(out) >= 2 else None
 
 
 def _customer_display_name(
@@ -53,8 +73,7 @@ def render_solution_map(
     depot : dict with keys ``coordinate.latitude`` / ``coordinate.longitude``
         and ``name`` for the depot marker.
     routes : list of ``VehicleRoute`` dicts as returned by the backend.
-    osrm_base_url : OSRM HTTP origin (e.g. ``http://127.0.0.1:5000``). When set,
-        polylines follow roads; on failure or when ``None``, straight lines are used.
+    osrm_base_url : OSRM HTTP origin used only if a route has no ``polyline`` from the API.
     customer_names_by_id : ``customer_id`` -> display name for tooltips/popups. Use ``None`` to show ids only.
     """
 
@@ -110,7 +129,10 @@ def render_solution_map(
 
         if len(coords) >= 2:
             line_coords: list[tuple[float, float]] = list(coords)
-            if osrm_base_url:
+            api_line = _line_coords_from_api_polyline(route)
+            if api_line:
+                line_coords = api_line
+            elif osrm_base_url:
                 road = fetch_driving_polyline(osrm_base_url, line_coords)
                 if road:
                     line_coords = road
