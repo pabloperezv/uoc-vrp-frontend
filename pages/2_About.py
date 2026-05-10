@@ -2,14 +2,22 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import streamlit as st
 
 st.title("About this project")
 
+st.image(
+    Path(__file__).resolve().parent.parent / "assets" / "vrp-solver-architecture.png",
+    caption="VRP solver architecture",
+    use_column_width=True,
+)
+
 st.markdown(
     """
 This application is part of a **Master's Thesis at UOC** focused on solving the
-**Vehicle Routing Problem (VRP)** with a production-grade architecture.
+Vehicle Routing Problem (VRP) developed by **Pablo Perez Verdugo**.
 
 ### Architecture
 
@@ -31,7 +39,7 @@ This application is part of a **Master's Thesis at UOC** focused on solving the
 
 ### Repositories
 
-- `uoc-vrp-frontend` — Streamlit UI.
-- `uoc-vrp-backend` — FastAPI + OR-Tools + OSRM stack.
+- https://github.com/pabloperezv/uoc-vrp-frontend
+- https://github.com/pabloperezv/uoc-vrp-backend
 """
 )

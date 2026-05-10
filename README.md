@@ -1,8 +1,10 @@
 # UOC VRP Frontend
 
-Streamlit application for interacting with the [UOC VRP backend](../uoc-vrp-backend).
+Streamlit application for interacting with the [UOC VRP backend](https://github.com/pabloperezv/uoc-vrp-backend).
 Upload a CSV of customers, configure the fleet, run an optimisation and inspect
-the resulting routes on an interactive Folium map.
+the resulting routes on an interactive Folium map. It follows the following architecture:
+
+![VRP solver architecture](assets/vrp-solver-architecture.png)
 
 ---
 
@@ -24,8 +26,8 @@ the resulting routes on an interactive Folium map.
 ├── utils/
 │   ├── settings.py         # Reads st.secrets / env vars
 │   └── formatting.py       # Human-friendly distance/time formatting
-├── sample_data/
-│   └── madrid_sample.csv
+├── assets/
+│   └── vrp-solver-architecture.png
 ├── .streamlit/
 │   ├── config.toml
 │   └── secrets.toml.example
@@ -55,56 +57,15 @@ Open <http://localhost:8501> in your browser.
 
 ---
 
-## Deployment to Streamlit Community Cloud
-
-1. Push this repository to GitHub.
-2. On <https://streamlit.io/cloud>, create a new app and point it at:
-   - **Repository**: your `uoc-vrp-frontend` repo
-   - **Branch**: `main`
-   - **Main file**: `app.py`
-3. In the **Secrets** panel, paste:
-   ```toml
-   # Public URL of the FastAPI process (scheme + host, optional port only).
-   BACKEND_URL = "https://vrp-api.example.com"
-   BACKEND_API_KEY = "..."         # optional
-   REQUEST_TIMEOUT_SECONDS = 120
-   ```
-4. Make sure your backend `CORS_ALLOWED_ORIGINS` includes the URL Streamlit
-   Cloud assigns to your app (e.g. `https://uoc-vrp.streamlit.app`).
-
-### Pre-deployment checklist
-
-- [ ] Backend exposed over **HTTPS** (Streamlit Cloud refuses mixed content).
-- [ ] CORS configured on the backend with the exact frontend URL.
-- [ ] Dependencies pinned in `requirements.txt`.
-- [ ] No secrets committed; everything sensitive lives in Streamlit Secrets.
-
----
-
 ## CSV format
 
-| Column     | Required | Type   | Notes                              |
-|------------|----------|--------|------------------------------------|
-| `id`       | yes      | string | Unique customer id.                |
-| `name`     | no       | string | Defaults to `id`.                  |
-| `latitude` | yes      | float  | WGS84, in `[-90, 90]`.             |
-| `longitude`| yes      | float  | WGS84, in `[-180, 180]`.           |
-| `demand`   | no       | int    | Integer units. Defaults to `1`.    |
+| Column     | Type   | Notes                              |
+|------------|--------|------------------------------------|
+| `id`       | string | Unique customer id.                |
+| `name`     | string | Defaults to `id`.                  |
+| `latitude` | float  | WGS84, in `[-90, 90]`.             |
+| `longitude`| float  | WGS84, in `[-180, 180]`.           |
+| `demand`   | int    | Integer units. Defaults to `1`.    |
 
-A working sample is provided at `sample_data/madrid_sample.csv`.
-
----
-
-## Architecture decisions (frontend)
-
-- **Multi-page app**: `pages/` is auto-discovered by Streamlit. Each page is a
-  thin orchestrator that delegates to `components` and `services`.
-- **Service classes own all I/O**: the UI never imports `requests` directly,
-  which keeps Streamlit reruns cheap and components testable in isolation.
-- **Dataclasses over dicts**: parameters flow through typed structures
-  (`VRPParameters`, `FrontendSettings`) for clarity and IDE support.
-- **Folium over PyDeck** by default: lighter, easier popups, no GPU dependency.
-  PyDeck remains a great upgrade path for very large fleets.
-- **`st.cache_resource`** is used on `get_settings`; do **not** cache the API
-  client itself across reruns — the underlying socket pool is not always
-  thread-safe with Streamlit's reruns.
+## Author
+Pablo Perez Verdugo
