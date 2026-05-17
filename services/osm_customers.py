@@ -46,7 +46,7 @@ def fetch_customers_from_osm(
     if not values:
         raise OSMFetchError("Provide at least one keyword (OSM tag value).")
 
-    limit = max(1, min(int(limit), 500))
+    limit = max(1, min(int(limit), 1000))
 
     tags = {tag_key: values}
     try:
